@@ -33,8 +33,8 @@ $(function() {
          */
         it('has URLs defined & URLs are not empty', function() {
             allFeeds.forEach(function(feed) {
-                expect(feed['url']).toBeDefined();
-                expect(feed['url'].length).not.toBe(0);
+                expect(feed.url).toBeDefined();
+                expect(feed.url).not.toBe('');
             });
         });
 
@@ -44,8 +44,8 @@ $(function() {
          */
         it('has name defined & name is not empty', function() {
             allFeeds.forEach(function(feed) {
-                expect(feed['name']).toBeDefined();
-                expect(feed['name'].length).not.toBe(0);
+                expect(feed.name).toBeDefined();
+                expect(feed.name).not.toBe('');
             });
         });
     });
@@ -59,8 +59,7 @@ $(function() {
          * hiding/showing of the menu element.
          */
         it("is hidden by default", function() {
-           let hiddenMenu = document.getElementsByClassName('menu-hidden');
-           expect(hiddenMenu.length).not.toBe(0);
+           expect($('body').hasClass('menu-hidden')).toBe(true);
         });
 
          /* A test that ensures the menu changes
@@ -73,16 +72,15 @@ $(function() {
             var menuIcon = $('.menu-icon-link');
             menuIcon.click();
 
-            // Get the 'menu-hidden' class and ensure that it si 0 (doesn't exist)
-            var menuHidden = document.getElementsByClassName('menu-hidden');
-            expect(menuHidden.length).toBe(0);
+            // Attempt to get the 'menu-hidden' class and ensure that it doesn't exist
+            expect($('body').hasClass('menu-hidden')).toBe(false);
 
             // Click it again, recheck for the 'menu-hidden' class
             menuIcon.click();
             menuHidden = document.getElementsByClassName('menu-hidden');
 
-            // Ensure that it is not 0
-            expect(menuHidden.length).not.toBe(0);
+            // Ensure that it is now exists
+            expect($('body').hasClass('menu-hidden')).toBe(true);
           });
     });
 
@@ -97,9 +95,8 @@ $(function() {
          * function is called and completes its work, there is at least
          * a single .entry element within the .feed container.
          */
-        it("has at least 1 entry", function(done) {
-            expect($('.feed a article').hasClass('entry')).toBe(true);
-            done();
+        it("has at least 1 entry", function() {
+            expect($('.feed .entry').length).toBeGreaterThan(0);
         });
     });
 
@@ -107,26 +104,35 @@ $(function() {
     describe("New Feed Selection", function() {
 
         // holds a snapshot of the page as it loads
-        var snapshot = [];
+        var snapshot = '';
+
+        // Store default time out for use later
+        var normalTimeout = jasmine.DEFAULT_TIMEOUT_INTERVAL;
 
         beforeEach(function(done) {
-            // load the first two feeds and take snapshots
-            loadFeed(0, function() {
-                snapshot.push($('.feed').text());
-            });
+            // This test takes a bit more time so lets increase it
+            jasmine.DEFAULT_TIMEOUT_INTERVAL = normalTimeout * 2;
 
-            loadFeed(1, function() {
-                snapshot.push($('.feed').text());
-                done();
+            // load the first two feeds and take snapshots
+            // To prevent race conditions the 2nd call to loadFeed must be
+            // inside the initial call to loadFeed
+            loadFeed(0, function() {
+                snapshot = $('.feed').text();
+
+                loadFeed(1,done);
             });
         });
 
         /* A test that ensures that when a new feed is loaded
          * by the loadFeed function that the content actually changes.
          */
-        it("has a new feed loaded", function(done) {
-            expect(snapshot[0]).not.toBe(snapshot[1]);
-            done();
+        it("has a new feed loaded", function() {
+            expect(snapshot).not.toBe($('.feed').text());
+        });
+
+        // Used to set the default timeout value back to normal
+        afterEach(function() {
+            jasmine.DEFAULT_TIMEOUT_INTERVAL = normalTimeout;
         });
     });
 }());
